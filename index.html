@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hailey-Jade &amp; Dylan's Clubhouse</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<style>
+:root{--sky:#dff3ff;--ink:#1c2b4a;--sun:#ffc93c;--grass:#2fb27a;--pink:#ff7eb6;--card:#fff;--line:#b9dcf2;--r:20px}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--sky);color:var(--ink);font:500 17px/1.4 "Baloo 2","Trebuchet MS",system-ui,sans-serif}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;border-radius:14px;padding:.5em 1em;background:var(--sun);font-weight:700;box-shadow:0 3px 0 rgba(28,43,74,.25)}
+button:active{transform:translateY(2px);box-shadow:none}
+button.alt{background:var(--pink)} button.ghost{background:#fff;box-shadow:none;border:2px solid var(--line)}
+input,select{border:2px solid var(--line);border-radius:14px;padding:.5em .8em;background:#fff;min-width:0}
+:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.hidden{display:none!important}
+header{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;justify-content:space-between;padding:.7rem 1rem;background:var(--ink);color:#fff}
+header h1{margin:0;font-size:1.3rem;font-weight:800}
+header .bar{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+nav{display:flex;gap:.5rem;padding:.7rem 1rem;overflow-x:auto}
+nav button{background:#fff;white-space:nowrap}
+nav button[aria-current=true]{background:var(--grass);color:#fff}
+main{display:grid;gap:1rem;padding:0 1rem 1rem;max-width:1100px;margin:auto;grid-template-columns:1fr}
+@media(min-width:800px){main{grid-template-columns:1fr 250px}}
+.card{background:var(--card);border-radius:var(--r);padding:1rem;box-shadow:0 4px 0 var(--line)}
+.card h2{margin:.1rem 0 .6rem;font-size:1.15rem}
+#login{max-width:360px;margin:12vh auto;display:grid;gap:.7rem}
+#login h1{margin:0;font-size:1.8rem;text-align:center}
+.err{color:#c0264b;min-height:1.4em;margin:0}
+#feed{height:48vh;overflow-y:auto;display:flex;flex-direction:column;gap:.5rem;padding:.3rem}
+.msg{max-width:85%;padding:.4rem .8rem;border-radius:16px;background:#eef8ff;align-self:flex-start;overflow-wrap:anywhere}
+.msg.me{align-self:flex-end;background:#fff1c2}
+.msg b{display:block;font-size:.8rem;opacity:.7}
+.msg img{max-width:100%;border-radius:10px;display:block;background:#fff}
+.row{display:flex;gap:.5rem;margin-top:.6rem}.row input{flex:1}
+.emo{display:flex;flex-wrap:wrap;gap:.2rem;margin-top:.5rem}
+.emo button{background:transparent;box-shadow:none;padding:.1em .3em;font-size:1.3rem}
+.dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;background:#aab;margin-right:.4em}
+.dot.on{background:var(--grass)}
+#who{list-style:none;margin:0;padding:0;display:grid;gap:.4rem}
+#who small{display:block;opacity:.7;margin-left:1.1em}
+#typing{min-height:1.4em;font-size:.9rem;opacity:.8;margin:.3rem 0 0}
+canvas{width:100%;max-width:420px;aspect-ratio:1;background:#fff;border:3px dashed var(--line);border-radius:var(--r);touch-action:none;display:block}
+.tools{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.6rem;align-items:center}
+.sw{width:2rem;height:2rem;border-radius:50%;padding:0;border:3px solid #fff;box-shadow:0 0 0 2px var(--line)}
+.sw[aria-pressed=true]{box-shadow:0 0 0 3px var(--ink)}
+#board{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;max-width:380px}
+.tile{aspect-ratio:1;font-size:2rem;background:var(--grass);color:transparent;box-shadow:0 3px 0 rgba(0,0,0,.2)}
+.tile.up{background:#fff;color:inherit}.tile.done{background:#c9f2dd;color:inherit}
+ol{margin:0;padding-left:1.3rem}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem}
+.gallery img{width:100%;border-radius:12px;background:#fff;border:2px solid var(--line)}
+.pw{font-family:monospace;background:#fff1c2;padding:.2em .5em;border-radius:8px}
+.ro{background:#fff1c2;border-radius:12px;padding:.3rem .8rem;font-size:.9rem}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<section id="login" class="card hidden">
+  <h1>🏡 <span data-i="title"></span></h1>
+  <input id="u" autocomplete="username" data-p="user" autocapitalize="none">
+  <input id="p" type="password" autocomplete="current-password" data-p="pass">
+  <button id="go" data-i="login"></button>
+  <p class="err" id="lerr" role="alert"></p>
+  <select class="lang" aria-label="Language"></select>
+</section>
+
+<div id="app" class="hidden">
+  <header>
+    <h1>🏡 <span data-i="title"></span></h1>
+    <div class="bar">
+      <span id="hello"></span><span class="ro hidden" id="rob" data-i="readonly"></span>
+      <select class="lang" aria-label="Language"></select>
+      <button class="ghost" id="out" data-i="logout"></button>
+    </div>
+  </header>
+  <nav id="tabs"></nav>
+  <main>
+    <div>
+      <section id="v-chat" class="card">
+        <h2 data-i="chat"></h2>
+        <div id="feed" aria-live="polite"></div>
+        <p id="typing"></p>
+        <form id="cf" class="row"><input id="mi" maxlength="500" data-p="msg" autocomplete="off"><button data-i="send"></button></form>
+        <div class="emo" id="emo"></div>
+      </section>
+      <section id="v-draw" class="card hidden">
+        <h2 data-i="draw"></h2>
+        <canvas id="cv" width="400" height="400"></canvas>
+        <div class="tools" id="tl"></div>
+      </section>
+      <section id="v-game" class="card hidden">
+        <h2 data-i="game"></h2>
+        <p><span data-i="moves"></span>: <b id="mv">0</b> · <span data-i="time"></span>: <b id="secs">0</b>s</p>
+        <div id="board"></div>
+        <div class="row"><button id="again" data-i="again"></button></div>
+        <h2 style="margin-top:1rem">🏆 <span data-i="top"></span></h2><ol id="lb"></ol>
+      </section>
+      <section id="v-doodles" class="card hidden"><h2 data-i="doodles"></h2><div class="gallery" id="gal"></div></section>
+      <section id="v-admin" class="card hidden">
+        <h2 data-i="admin"></h2>
+        <form id="af" class="row" style="flex-wrap:wrap">
+          <input id="au" data-p="user" required pattern="[a-zA-Z0-9_\-]{3,20}">
+          <input id="an" data-p="display">
+          <select id="ar"><option value="kid">kid</option><option value="parent">parent</option></select>
+          <button data-i="create"></button>
+        </form>
+        <p id="ares" aria-live="polite"></p>
+        <small data-i="adminnote"></small>
+        <ul id="roster"></ul>
+      </section>
+    </div>
+    <aside class="card"><h2 data-i="online"></h2><ul id="who"></ul></aside>
+  </main>
+</div>
+
+<script>
+/* ---------- CONFIG ---------- */
+const SUPABASE_URL = 'https://YOUR-PROJECT.supabase.co';
+const SUPABASE_ANON_KEY = 'YOUR-ANON-KEY'; // anon key is public; RLS protects the data
+const EMAIL_DOMAIN = '@clubhouse.local';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ---------- i18n ---------- */
+const I18N = {
+ en:{title:"Hailey-Jade & Dylan's Clubhouse",user:'Username',pass:'Password',login:'Log in',logout:'Log out',chat:'Chat',draw:'Draw',game:'Memory Match',doodles:'Doodles',admin:'Admin',send:'Send',msg:'Say something…',online:"Who's here",typing:'is typing…',clear:'Clear',sendDoodle:'Send doodle',moves:'Moves',time:'Time',again:'New game',top:'Top players',win:'You won!',bad:'Wrong username or password.',readonly:'Watching only',hi:'Hi',create:'Create / reset',display:'Display name',adminnote:'Passwords are stored hashed and cannot be shown again. Resetting makes a new one.',newpw:'New password (shown once)',none:'Nothing yet!',in:'in',rooms:{chat:'Chat',draw:'Drawing',game:'Memory game',doodles:'Doodles',admin:'Admin'}},
+ nl:{title:'Clubhuis van Hailey-Jade & Dylan',user:'Gebruikersnaam',pass:'Wachtwoord',login:'Inloggen',logout:'Uitloggen',chat:'Chat',draw:'Tekenen',game:'Memory',doodles:'Tekeningen',admin:'Beheer',send:'Stuur',msg:'Zeg iets…',online:'Wie is er',typing:'is aan het typen…',clear:'Wissen',sendDoodle:'Tekening sturen',moves:'Zetten',time:'Tijd',again:'Nieuw spel',top:'Topspelers',win:'Gewonnen!',bad:'Verkeerde gebruikersnaam of wachtwoord.',readonly:'Alleen meekijken',hi:'Hoi',create:'Maken / resetten',display:'Weergavenaam',adminnote:'Wachtwoorden worden versleuteld opgeslagen en zijn niet meer te zien. Resetten maakt een nieuw wachtwoord.',newpw:'Nieuw wachtwoord (eenmalig zichtbaar)',none:'Nog niets!',in:'in',rooms:{chat:'Chat',draw:'Tekenen',game:'Memory',doodles:'Tekeningen',admin:'Beheer'}},
+ es:{title:'Club de Hailey-Jade y Dylan',user:'Usuario',pass:'Contraseña',login:'Entrar',logout:'Salir',chat:'Chat',draw:'Dibujar',game:'Memoria',doodles:'Dibujos',admin:'Admin',send:'Enviar',msg:'Escribe algo…',online:'Quién está',typing:'está escribiendo…',clear:'Borrar',sendDoodle:'Enviar dibujo',moves:'Movimientos',time:'Tiempo',again:'Juego nuevo',top:'Mejores jugadores',win:'¡Ganaste!',bad:'Usuario o contraseña incorrectos.',readonly:'Solo mirando',hi:'Hola',create:'Crear / restablecer',display:'Nombre visible',adminnote:'Las contraseñas se guardan cifradas y no se pueden volver a ver. Restablecer crea una nueva.',newpw:'Contraseña nueva (se muestra una vez)',none:'¡Aún nada!',in:'en',rooms:{chat:'Chat',draw:'Dibujo',game:'Memoria',doodles:'Dibujos',admin:'Admin'}}
+};
+const LANGS = {en:'English',nl:'Nederlands',es:'Español'};
+let lang = localStorage.getItem('lang') || (['nl','es'].includes(navigator.language.slice(0,2)) ? navigator.language.slice(0,2) : 'en');
+const t = k => I18N[lang][k] ?? I18N.en[k];
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const el = (tag, props = {}, ...kids) => { const n = Object.assign(document.createElement(tag), props); n.append(...kids); return n; };
+let me = null, profiles = {}, view = 'chat', channel = null, msgSub = null;
+
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.title = t('title');
+  document.querySelectorAll('[data-i]').forEach(n => n.textContent = t(n.dataset.i));
+  document.querySelectorAll('[data-p]').forEach(n => n.placeholder = t(n.dataset.p));
+  document.querySelectorAll('.lang').forEach(s => {
+    s.replaceChildren(...Object.entries(LANGS).map(([k, v]) => el('option', { value: k, textContent: v, selected: k === lang })));
+  });
+  if (me) { $('#hello').textContent = `${t('hi')} ${me.display_name}!`; buildTabs(); buildTools(); renderWho(); }
+}
+document.addEventListener('change', async e => {
+  if (!e.target.classList.contains('lang')) return;
+  lang = e.target.value; localStorage.setItem('lang', lang); applyLang();
+  if (me) await sb.from('profiles').update({ lang }).eq('id', me.id); // saved to profile
+});
+
+/* ---------- auth ---------- */
+$('#go').onclick = async () => {
+  $('#lerr').textContent = '';
+  const { error } = await sb.auth.signInWithPassword({
+    email: $('#u').value.trim().toLowerCase() + EMAIL_DOMAIN, password: $('#p').value });
+  if (error) $('#lerr').textContent = t('bad');
+};
+$('#p').addEventListener('keydown', e => e.key === 'Enter' && $('#go').click());
+$('#out').onclick = () => sb.auth.signOut();
+sb.auth.onAuthStateChange((_ev, session) => { setTimeout(() => session ? boot(session.user) : teardown(), 0); });
+
+async function boot(user) {
+  if (me?.id === user.id) return;
+  const { data: list } = await sb.from('profiles').select('*');
+  profiles = Object.fromEntries((list || []).map(p => [p.id, p]));
+  me = profiles[user.id];
+  if (!me) { await sb.auth.signOut(); return; }
+  lang = me.lang; localStorage.setItem('lang', lang);
+  $('#login').classList.add('hidden'); $('#app').classList.remove('hidden');
+  $('#rob').classList.toggle('hidden', me.role !== 'parent');
+  document.querySelectorAll('#cf, #emo').forEach(n => n.classList.toggle('hidden', me.role !== 'kid'));
+  applyLang(); show('chat'); loadFeed(); startRealtime(); newGame();
+}
+function teardown() {
+  me = null; sb.removeAllChannels(); channel = null;
+  $('#app').classList.add('hidden'); $('#login').classList.remove('hidden'); applyLang();
+}
+
+/* ---------- tabs ---------- */
+function buildTabs() {
+  const tabs = me.role === 'kid' ? ['chat', 'draw', 'game'] : ['chat', 'doodles', 'game', 'admin'];
+  $('#tabs').replaceChildren(...tabs.map(k => el('button', { textContent: t(k), onclick: () => show(k) })));
+  document.querySelectorAll('#tabs button').forEach((b, i) => b.setAttribute('aria-current', tabs[i] === view));
+}
+function show(v) {
+  view = v;
+  ['chat', 'draw', 'game', 'doodles', 'admin'].forEach(k => $('#v-' + k).classList.toggle('hidden', k !== v));
+  buildTabs();
+  if (v === 'game') loadBoard(); if (v === 'doodles') loadGallery(); if (v === 'admin') loadRoster();
+  track({ typing: false });
+}
+
+/* ---------- chat ---------- */
+function addMsg(m, scroll = true) {
+  const p = profiles[m.user_id], mine = m.user_id === me.id;
+  const box = el('div', { className: 'msg' + (mine ? ' me' : '') }, el('b', { textContent: p ? p.display_name : '?' }));
+  if (m.body) box.append(m.body); // textContent-safe: never innerHTML
+  if (m.doodle && m.doodle.startsWith('data:image/')) box.append(el('img', { src: m.doodle, alt: 'doodle' }));
+  $('#feed').append(box); if (scroll) $('#feed').scrollTop = 1e9;
+}
+async function loadFeed() {
+  const { data } = await sb.from('messages').select('*').order('created_at', { ascending: false }).limit(50);
+  $('#feed').replaceChildren(); (data || []).reverse().forEach(m => addMsg(m, false)); $('#feed').scrollTop = 1e9;
+}
+async function send(row) { const { error } = await sb.from('messages').insert(row); if (error) console.error(error); }
+$('#cf').onsubmit = e => { e.preventDefault(); const b = $('#mi').value.trim(); if (!b) return; $('#mi').value = ''; send({ body: b }); track({ typing: false }); };
+$('#emo').replaceChildren(...[...'😀😂😍😎🥳🤩😴🤔👍👏🎉❤️🔥🌈⭐🦄🐶🐱🍕🍦⚽🎮'].map(c => el('button', { type: 'button', textContent: c, onclick: () => { $('#mi').value += c; $('#mi').focus(); typed(); } })));
+
+/* ---------- presence (online, typing, room) ---------- */
+let typingTimer;
+function startRealtime() {
+  channel = sb.channel('clubhouse', { config: { presence: { key: me.id } } });
+  channel.on('presence', { event: 'sync' }, renderWho)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => addMsg(p.new))
+    .subscribe(s => { if (s === 'SUBSCRIBED' && me.role === 'kid') track({ typing: false }); }); // parents stay invisible/read-only
+}
+const track = o => { if (channel && me?.role === 'kid') channel.track({ room: view, typing: false, ...o }); };
+function typed() { track({ typing: true }); clearTimeout(typingTimer); typingTimer = setTimeout(() => track({ typing: false }), 1500); }
+$('#mi').addEventListener('input', typed);
+function renderWho() {
+  if (!channel || !me) return;
+  const st = channel.presenceState();
+  const list = Object.values(profiles).filter(p => p.role === 'kid').map(p => {
+    const s = st[p.id]?.[0]; return { p, s };
+  });
+  $('#who').replaceChildren(...list.map(({ p, s }) => el('li', {},
+    el('span', { className: 'dot' + (s ? ' on' : '') }), p.display_name,
+    ...(s ? [el('small', { textContent: `${t('in')} ${t('rooms')[s.room] || s.room}` })] : []))));
+  const typers = list.filter(({ p, s }) => s?.typing && p.id !== me.id).map(({ p }) => p.display_name);
+  $('#typing').textContent = typers.length ? `${typers.join(', ')} ${t('typing')}` : '';
+}
+
+/* ---------- drawing ---------- */
+const cv = $('#cv'), cx = cv.getContext('2d'); let color = '#1c2b4a', drawing = false;
+cx.lineCap = cx.lineJoin = 'round'; cx.lineWidth = 6; cx.fillStyle = '#fff'; cx.fillRect(0, 0, 400, 400);
+function buildTools() {
+  $('#tl').replaceChildren(
+    ...['#1c2b4a', '#e63946', '#ffc93c', '#2fb27a', '#2a7de1', '#ff7eb6'].map(c => {
+      const b = el('button', { className: 'sw', type: 'button', onclick: () => { color = c; buildTools(); } });
+      b.style.background = c; b.setAttribute('aria-pressed', c === color); b.setAttribute('aria-label', c); return b; }),
+    el('button', { className: 'ghost', textContent: t('clear'), onclick: () => { cx.fillStyle = '#fff'; cx.fillRect(0, 0, 400, 400); } }),
+    el('button', { textContent: t('sendDoodle'), onclick: async () => {
+      await send({ doodle: cv.toDataURL('image/webp', 0.6) }); show('chat'); } }));
+}
+const pos = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * 400 / r.width, (e.clientY - r.top) * 400 / r.height]; };
+cv.onpointerdown = e => { drawing = true; cv.setPointerCapture(e.pointerId); cx.strokeStyle = color; cx.beginPath(); cx.moveTo(...pos(e)); cx.lineTo(...pos(e)); cx.stroke(); };
+cv.onpointermove = e => { if (!drawing) return; cx.lineTo(...pos(e)); cx.stroke(); };
+cv.onpointerup = cv.onpointercancel = () => drawing = false;
+
+/* ---------- memory match ---------- */
+let deck, up, moves, matched, t0, clock, lock;
+function newGame() {
+  const e = [...'🐶🐱🦊🐼🐸🦄🐙🐝'];
+  deck = [...e, ...e].sort(() => Math.random() - .5); up = []; moves = matched = 0; lock = false;
+  clearInterval(clock); t0 = Date.now(); $('#mv').textContent = 0; $('#secs').textContent = 0;
+  clock = setInterval(() => $('#secs').textContent = Math.floor((Date.now() - t0) / 1000), 500);
+  $('#board').replaceChildren(...deck.map((c, i) => el('button', { className: 'tile', textContent: c, onclick: () => flip(i) })));
+}
+async function flip(i) {
+  const tiles = $('#board').children, tile = tiles[i];
+  if (lock || up.includes(i) || tile.classList.contains('done')) return;
+  tile.classList.add('up'); up.push(i);
+  if (up.length < 2) return;
+  $('#mv').textContent = ++moves; const [a, b] = up; up = [];
+  if (deck[a] === deck[b]) { [a, b].forEach(k => tiles[k].classList.replace('up', 'done')); if (++matched === 8) win(); }
+  else { lock = true; setTimeout(() => { [a, b].forEach(k => tiles[k].classList.remove('up')); lock = false; }, 800); }
+}
+async function win() {
+  clearInterval(clock); const seconds = Math.floor((Date.now() - t0) / 1000);
+  if (me.role === 'kid') { await sb.from('scores').insert({ moves, seconds }); loadBoard(); }
+  setTimeout(() => alert(`🎉 ${t('win')} ${moves} ${t('moves').toLowerCase()}, ${seconds}s`), 300);
+}
+$('#again').onclick = newGame;
+async function loadBoard() {
+  const { data } = await sb.from('scores').select('*').order('moves').order('seconds').limit(5);
+  $('#lb').replaceChildren(...(data?.length ? data.map(s => el('li', { textContent: `${profiles[s.user_id]?.display_name ?? '?'} — ${s.moves} ${t('moves').toLowerCase()}, ${s.seconds}s` })) : [el('li', { textContent: t('none') })]));
+}
+
+/* ---------- parent oversight + admin ---------- */
+async function loadGallery() {
+  const { data } = await sb.from('messages').select('*').not('doodle', 'is', null).order('created_at', { ascending: false }).limit(40);
+  $('#gal').replaceChildren(...(data || []).map(m => el('figure', { style: 'margin:0' },
+    el('img', { src: m.doodle, alt: 'doodle' }), el('figcaption', { textContent: profiles[m.user_id]?.display_name ?? '?' }))));
+}
+function loadRoster() {
+  $('#roster').replaceChildren(...Object.values(profiles).map(p => el('li', { textContent: `${p.display_name} (@${p.username}, ${p.role}, ${p.lang})` })));
+}
+$('#af').onsubmit = async e => {
+  e.preventDefault();
+  const { data, error } = await sb.functions.invoke('create-user', {
+    body: { username: $('#au').value, display_name: $('#an').value, role: $('#ar').value } });
+  $('#ares').replaceChildren(error || data?.error ? el('span', { className: 'err', textContent: error?.message || data.error })
+    : el('span', {}, `${t('newpw')} @${data.username}: `, el('span', { className: 'pw', textContent: data.password })));
+  if (data?.username) { const { data: list } = await sb.from('profiles').select('*'); profiles = Object.fromEntries(list.map(p => [p.id, p])); loadRoster(); renderWho(); }
+};
+
+/* ---------- start ---------- */
+applyLang();
+sb.auth.getSession().then(({ data }) => { if (!data.session) $('#login').classList.remove('hidden'); });
+</script>
+</body>
+</html>
